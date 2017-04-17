@@ -1,0 +1,19 @@
+body {
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    min-height: 2000px;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.form-signin{
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+}
+
+.pt-3{
+  padding-top: .75% !important;
+}
