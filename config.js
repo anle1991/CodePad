@@ -8,8 +8,7 @@ module.exports = {
       pass: 'ebaypassword'
     }
   },
-  dbConnstring: 'mongodb://admin:passwor@ds163940.mlab.com:63940/codepad',
-
+  dbConnstring: 'mongodb://admin:password@ds163940.mlab.com:63940/codepad',
   sessionKey: 'CodePad'
 }
 
