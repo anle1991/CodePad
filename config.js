@@ -8,6 +8,9 @@ module.exports = {
       pass: 'ebaypassword'
     }
   },
-  dbConnstring: 'mongodb://127.0.0.1:27017/codepad',
-  sessionKey: 'HaloCode4Share'
+  dbConnstring: 'mongodb://admin:passwor@ds163940.mlab.com:63940/codepad',
+
+  sessionKey: 'CodePad'
 }
+
+// Local: mongodb://127.0.0.1:27017/codepad

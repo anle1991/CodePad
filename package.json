@@ -16,6 +16,7 @@
     "mongoose": "^4.9.3",
     "morgan": "~1.8.1",
     "nodemailer": "^3.1.8",
+    "ot": "git+https://github.com/Operational-Transformation/ot.js.git",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
     "passport-local": "^1.0.0",

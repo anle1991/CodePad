@@ -1,80 +1,210 @@
-<div>
-  <div class="row pt-3">
-    <div class="col-md-8">
-      <textarea id="code-screen"></textarea>
-    </div>
+  <div>
+    <div class="row pt-3">
+      <div class="col-md-8">
+        <textarea id="code-screen">{{content}}</textarea>
+      </div>
 
-    <div class="col-md-4" id="chatbox">
-      <div class="panel panel-primary">
-        <div class="panel-heading">
-          CHAT ROOM
-          <span class="pull-right" id="chatbox-username">
-            {{#if user}}
-              {{user.name}}
-            {{/if}}
-          </span>
-        </div>
-        <div class="panel-body">
-          <ul class="media-list" style="heigh:300px; over-flow-y: scroll" id="chatbox-listMessages">
+      <div class="col-md-4" id="chatbox">
+        <div class="panel panel-primary">
+          <!-- Video Call -->
+          <div id="video-container">
+            <video id="their-video" autoplay></video>
+            <video id="my-video" autoplay muted="true"></video>
 
-          </ul>
-        </div>
-        <div class="panel-footer">
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="Enter message" id="userMessage">
-            <span class="input-group-btn">
-              <button type="button" class="btn btn-primary" onclick="sendMessage()">Send</button>
+            <div id="step2">
+              <p>Your ID: <span id="my-id">...</span></p>
+
+              <div class="form-inline">
+                <input type="text" class="form-control" placeholder="Call User ID..." id="callto-id" />
+                <a href="#" class="btn btn-sm btn-success" id="make-call">Call</a>
+              </div>
+
+              <div id="step3">
+                <p>Talk to <span id="their-id">...</span>
+                  <a href="#" class="btn btn-sm btn-danger" id="end-call">End Call</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <!--Chat Room -->
+          <div class="panel-heading">
+            CHAT ROOM
+            <span class="pull-right" id="chatbox-username">
+              {{#if user}}
+                {{user.name}}
+              {{/if}}
             </span>
+          </div>
+          <div class="panel-body">
+            <ul class="media-list" style="heigh:300px; over-flow-y: scroll" id="chatbox-listMessages">
+
+            </ul>
+          </div>
+          <div class="panel-footer">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Enter message" id="userMessage">
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-primary" onclick="sendMessage()">Send</button>
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-<input type="hidden" value="{{roomId}}" id="roomId">
+  <input type="hidden" value="{{roomId}}" id="roomId">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/mode/javascript/javascript.min.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/mode/javascript/javascript.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/plugins/ot/ot.js"></script>
+  <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
 
-<script>
-  var socket = io.connect('http://localhost:3000');
-  var editor = CodeMirror.fromTextArea(document.getElementById("code-screen"), {
-    lineNumbers: true,
-    matchBrackets: true,
-    // mode: "text/x-java",
-    theme: "monokai"
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code-screen"), {
+      lineNumbers: true,
+      matchBrackets: true,
+      // mode: "text/x-java",
+      theme: "monokai"
+    });
+
+    var socket = io.connect();
+
+  //-----------Doc-----------
+    var EditorClient = ot.EditorClient;
+    var SocketIOAdapter = ot.SocketIOAdapter;
+    var CodeMirrorAdapter = ot.CodeMirrorAdapter;
+
+    function init(str, revision, clients, serverAdapter){
+      var previousContent = $("#code-screen").val();
+      if(!previousContent){
+        editor.setValue(str);
+      }else{
+        editor.setValue(previousContent);
+      }
+
+      window.cmClient = new EditorClient(
+        revision, clients, serverAdapter, new CodeMirrorAdapter(editor)
+      );
+    };
+
+    socket.on('doc', function(obj){
+      init(obj.str, obj.revision, obj.clients, new SocketIOAdapter(socket));
+    });
+
+  //-----------Chat-----------
+    var username = $("#chatbox-username").val();
+    if(username === ""){
+      var userId = Math.floor(Math.random() * 9999).toString();
+      username = "User" + userId;
+      $("#chatbox-username").text(username);
+    }
+
+    // Join room with taskId (roomId)
+    var roomId = $('#roomId').val();
+    socket.emit('joinRoom', {room: roomId, username: username});
+
+    // Send message: Called by onclick action
+    var sendMessage = function(){
+      var userMessage = $('#userMessage').val();
+      console.log("Chat - Send (emit) message: " + JSON.stringify(userMessage));
+      socket.emit('chatMessage', {message: userMessage, username: username});
+      $('#userMessage').val("");
+    };
+
+    // Received new message
+    socket.on('chatMessage', function(data){
+      $('#chatbox-listMessages').append(userMessage(data.username, data.message));
+    });
+
+    var userMessage = function(name, text){
+      return ('<li class="media"> <div class="media-body"> <div class="media">' +
+      '<div class="media-body"' +
+      '<b>' + name + '</b> :' + text +
+      '<hr/></div></div></div></li>'
+      );
+    }
+
+    // ------------PeerJS- Video Call------
+    // Compatibility shim
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  // PeerJS object
+  var peer = new Peer(username + roomId, {
+    host: '',
+    path: '/peerjs',
+    port: 443,
+    key: 'codepad',
+    debug: true
+  });
+  peer.on('open', function(){
+    $('#my-id').text(peer.id);
   });
 
-  var username = $("#chatbox-username").val();
-  if(username === ""){
-    var userId = Math.floor(Math.random() * 9999).toString();
-    username = "User" + userId;
-    $("#chatbox-username").text(username);
-  }
-
-  // Join room with taskId (roomId)
-  var roomId = $('#roomId').val();
-  socket.emit('joinRoom', {room: roomId});
-
-  // Send message: Called by onclick action
-  var sendMessage = function(){
-    var userMessage = $('#userMessage').val();
-    console.log("Chat - Send (emit) message: " + JSON.stringify(userMessage));
-    socket.emit('chatMessage', {message: userMessage, username: username});
-    $('#userMessage').val("");
-  };
-
-  // Received new message
-  socket.on('chatMessage', function(data){
-    $('#chatbox-listMessages').append(userMessage(data.username, data.message));
+  // Receiving a call
+  peer.on('call', function(call){
+    // Answer the call automatically (instead of prompting user) for demo purposes
+    call.answer(window.localStream);
+    step3(call);
   });
 
-  var userMessage = function(name, text){
-    return ('<li class="media"> <div class="media-body"> <div class="media">' +
-    '<div class="media-body"' +
-    '<b>' + name + '</b> :' + text +
-    '<hr/></div></div></div></li>'
-    );
+  peer.on('error', function(err){
+    alert(err.message);
+    // Return to step 2 if error occurs
+    step2();
+  });
+
+  // Click handlers setup
+  $(function(){
+    $('#make-call').click(function(){
+      // Initiate a call!
+      var call = peer.call($('#callto-id').val(), window.localStream);
+      step3(call);
+    });
+
+    $('#end-call').click(function(){
+      window.existingCall.close();
+      step2();
+    });
+
+    // Retry if getUserMedia fails
+    $('#step1-retry').click(function(){
+      $('#step1-error').hide();
+      step1();
+    });
+
+    // Get things started
+    step1();
+  });
+
+  function step1 () {
+    // Get audio/video stream
+    navigator.getUserMedia({audio: true, video: true}, function(stream){
+      // Set your video displays
+      $('#my-video').prop('src', URL.createObjectURL(stream));
+      window.localStream = stream;
+      step2();
+    }, function(){ $('#step1-error').show(); });
   }
-</script>
+
+  function step2 () {
+    $('#step1, #step3').hide();
+    $('#step2').show();
+  }
+
+  function step3 (call) {
+    // Hang up on an existing call if present
+    if (window.existingCall) {
+      window.existingCall.close();
+    }
+    // Wait for stream on the call, then set peer video display
+    call.on('stream', function(stream){
+      $('#their-video').prop('src', URL.createObjectURL(stream));
+    });
+    // UI stuff
+    window.existingCall = call;
+    $('#their-id').text(call.peer);
+    call.on('close', step2);
+    $('#step1, #step2').hide();
+    $('#step3').show();
+  }
+  </script>

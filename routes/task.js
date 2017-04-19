@@ -16,7 +16,7 @@ router.get('/createTask', function(req,res){
 
 router.get('/task/:id', function(req, res){
   if(req.params.id){
-    console.log("Task ID: " + req.params.id);
+    console.log("Find task ID: " + req.params.id);
     Task.findOne({_id: req.params.id}, function(err,data){
       if(err){
         console.log("Error find task: " + err);
@@ -24,7 +24,7 @@ router.get('/task/:id', function(req, res){
       }
 
       if(data){
-        res.render('task', {data: data, roomId: data.id});
+        res.render('task', {content: data.content, roomId: data.id});
       }else{
         console.log("Error data: " + err + " - " + data);
         res.render('error');
