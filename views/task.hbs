@@ -58,7 +58,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.25.0/mode/javascript/javascript.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/plugins/ot/ot.js"></script>
-  <script src="https://peerjs1991.herokuapp.com/peer/peer.js"></script>
+  <script src="https://guarded-spire-99814.herokuapp.com/peer/peer.js"></script>
 
   <script>
     var editor = CodeMirror.fromTextArea(document.getElementById("code-screen"), {
@@ -130,7 +130,7 @@
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
   // PeerJS object
   var peer = new Peer(username + roomId, {
-    host: 'https://peerjs1991.herokuapp.com',
+    host: 'guarded-spire-99814.herokuapp.com',
     path: '/peerjs',
     port: 443,
     key: 'codepad',
